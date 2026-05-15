@@ -8,6 +8,15 @@
   included_files = ["server/**"]
 
 [[redirects]]
-  from = "/api/*"
+  from = "/api/*"[build]
+  command = "npm install"
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["server/**"]
+  external_node_modules = ["googleapis", "openai"]
+
   to = "/.netlify/functions/api"
   status = 200
