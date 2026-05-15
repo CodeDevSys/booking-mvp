@@ -7,7 +7,19 @@
   node_bundler = "esbuild"
   included_files = ["server/**"]
 
-[[redirects]]
+[[redirects]][build]
+  command = "npm install --omit=optional"
+  publish = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--omit=optional"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["server/**"]
+
   from = "/api/*"[build]
   command = "npm install"
   publish = "."
