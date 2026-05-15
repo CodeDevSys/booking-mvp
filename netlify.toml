@@ -1,34 +1,11 @@
 [build]
-  command = "npm install"
-  publish = "."
-  functions = "netlify/functions"
-
-[functions]
-  node_bundler = "esbuild"
-  included_files = ["server/**"]
-
-[[redirects]][build]
-  command = "npm install --omit=optional"
-  publish = "."
-  functions = "netlify/functions"
+command = "npm install --omit=optional"
+publish = "."
+functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "20"
-  NPM_FLAGS = "--omit=optional"
+NODE_VERSION = "20"
 
 [functions]
-  node_bundler = "esbuild"
-  included_files = ["server/**"]
-
-  from = "/api/*"[build]
-  command = "npm install"
-  publish = "."
-  functions = "netlify/functions"
-
-[functions]
-  node_bundler = "esbuild"
-  included_files = ["server/**"]
-  external_node_modules = ["googleapis", "openai"]
-
-  to = "/.netlify/functions/api"
-  status = 200
+node_bundler = "esbuild"
+included_files = ["server/**"]
