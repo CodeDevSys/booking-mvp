@@ -311,8 +311,158 @@
     }
   }
 
+  const ADMIN_STORAGE = "booking_admin_key";
+
+  function escapeHtml(text) {
+    const d = document.createElement("div");
+    d.textContent = String(text);
+    return d.innerHTML;
+  }
+
+  function formatWhen(start) {
+    if (!start) return "—";
+    return new Date(start).toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function showBookingApp() {
+    const booking = $("#booking-app");
+    const manager = $("#manager-app");
+    if (booking) booking.hidden = false;
+    if (manager) manager.hidden = true;
+    location.hash = "";
+  }
+
+  function showManagerApp() {
+    const booking = $("#booking-app");
+    const manager = $("#manager-app");
+    if (booking) booking.hidden = true;
+    if (manager) manager.hidden = false;
+    location.hash = "manager";
+    initManager();
+  }
+
+  function renderAdminBookings(bookings) {
+    const container = $("#bookings-container");
+    const count = $("#count-label");
+    if (!container) return;
+
+    if (!bookings.length) {
+      container.innerHTML = '<p class="empty">No upcoming appointments yet.</p>';
+      if (count) count.textContent = "0 appointments";
+      return;
+    }
+
+    if (count) {
+      count.textContent = `${bookings.length} appointment${bookings.length === 1 ? "" : "s"}`;
+    }
+
+    const rows = bookings
+      .map(
+        (b) => `<tr>
+        <td>${formatWhen(b.start)}</td>
+        <td>${escapeHtml(b.service || "—")}</td>
+        <td>${escapeHtml(b.name || "—")}</td>
+        <td>${escapeHtml(b.email || "—")}</td>
+        <td>${escapeHtml(b.notes || "—")}</td>
+      </tr>`
+      )
+      .join("");
+
+    container.innerHTML = `<table class="bookings-table">
+        <thead><tr><th>When</th><th>Service</th><th>Customer</th><th>Email</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+  }
+
+  async function loadAdminBookings() {
+    const key = sessionStorage.getItem(ADMIN_STORAGE) || "";
+    const container = $("#bookings-container");
+    if (!container) return;
+    container.innerHTML = '<p class="loading">Loading…</p>';
+
+    try {
+      const { res, data } = await apiFetch(`/api/bookings?key=${encodeURIComponent(key)}`);
+      if (res.status === 401) {
+        sessionStorage.removeItem(ADMIN_STORAGE);
+        showAdminLogin();
+        throw new Error(data.error || "Invalid admin key");
+      }
+      if (!res.ok) throw new Error(data.error || "Failed to load");
+      renderAdminBookings(data.bookings || []);
+    } catch (err) {
+      container.innerHTML = `<p class="empty">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  function showAdminLogin() {
+    const login = $("#login-card");
+    const list = $("#list-card");
+    if (login) login.hidden = false;
+    if (list) list.hidden = true;
+  }
+
+  function showAdminList() {
+    const login = $("#login-card");
+    const list = $("#list-card");
+    if (login) login.hidden = true;
+    if (list) list.hidden = false;
+    loadAdminBookings();
+  }
+
+  let managerReady = false;
+  function initManager() {
+    if (managerReady) {
+      if (sessionStorage.getItem(ADMIN_STORAGE)) showAdminList();
+      else showAdminLogin();
+      return;
+    }
+    managerReady = true;
+
+    const loginForm = $("#login-form");
+    if (loginForm) {
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const key = $("#admin-key")?.value.trim();
+        if (!key) return;
+        sessionStorage.setItem(ADMIN_STORAGE, key);
+        showAdminList();
+      });
+    }
+
+    $("#refresh-btn")?.addEventListener("click", loadAdminBookings);
+    $("#logout-btn")?.addEventListener("click", () => {
+      sessionStorage.removeItem(ADMIN_STORAGE);
+      showAdminLogin();
+    });
+
+    $("#back-to-booking")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      showBookingApp();
+    });
+
+    if (sessionStorage.getItem(ADMIN_STORAGE)) showAdminList();
+    else showAdminLogin();
+  }
+
   function init() {
     if (!$("#booking-card")) return;
+
+    $("#manager-link")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      showManagerApp();
+    });
+
+    if (location.hash === "#manager") showManagerApp();
+
+    window.addEventListener("hashchange", () => {
+      if (location.hash === "#manager") showManagerApp();
+      else showBookingApp();
+    });
 
     initDateInput();
     setupNavigation();

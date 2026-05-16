@@ -7,17 +7,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+  <div id="js-warning" class="js-warning" hidden>
+    JavaScript did not load. Upload <strong>script.js</strong> to GitHub (same folder as index.html), then redeploy.
+  </div>
   <div class="bg-gradient" aria-hidden="true"></div>
 
-  <main class="app">
+  <main class="app" id="booking-app">
     <header class="header">
       <div class="logo">◆</div>
       <div>
         <h1>Book an appointment</h1>
-        <p class="subtitle">Mon–Fri · 30-minute sessions</p>
+        <p class="subtitle">Mon–Fri · 30-minute sessions · <a href="#manager" id="manager-link" style="color: var(--muted)">Manager login</a></p>
       </div>
     </header>
 
@@ -102,6 +105,46 @@
     </aside>
   </main>
 
-  <script src="script.js"></script>
+  <main class="app" id="manager-app" hidden>
+    <header class="header">
+      <div class="logo">◆</div>
+      <div>
+        <h1>Appointments</h1>
+        <p class="subtitle"><a href="#" id="back-to-booking" style="color: var(--muted)">← Back to booking</a></p>
+      </div>
+    </header>
+
+    <section class="card" id="login-card">
+      <h2>Manager sign in</h2>
+      <p class="hint">Use the ADMIN_KEY from Netlify environment variables.</p>
+      <form id="login-form" class="form">
+        <label>
+          Admin key
+          <input type="password" id="admin-key" required autocomplete="current-password" />
+        </label>
+        <button type="submit" class="btn primary">View appointments</button>
+      </form>
+    </section>
+
+    <section class="card" id="list-card" hidden>
+      <div class="admin-toolbar">
+        <button type="button" class="btn primary small" id="refresh-btn">Refresh</button>
+        <button type="button" class="btn ghost small" id="logout-btn">Sign out</button>
+        <span class="hint" id="count-label"></span>
+      </div>
+      <div id="bookings-container"><p class="loading">Loading…</p></div>
+      <p class="hint" style="margin-top:1rem">Shows server bookings only (not demo-mode saves on a customer device).</p>
+    </section>
+  </main>
+
+  <script src="./script.js"></script>
+  <script>
+    setTimeout(function () {
+      if (!window.__bookingAppReady) {
+        var w = document.getElementById("js-warning");
+        if (w) w.hidden = false;
+      }
+    }, 800);
+  </script>
 </body>
 </html>
