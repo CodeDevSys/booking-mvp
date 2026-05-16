@@ -379,23 +379,50 @@
         <tbody>${rows}</tbody></table>`;
   }
 
+  function setAdminStatus(message, type) {
+    const el = $("#admin-status");
+    if (!el) return;
+    el.textContent = message || "";
+    el.className = "admin-status" + (type ? ` ${type}` : "");
+  }
+
   async function loadAdminBookings() {
     const key = sessionStorage.getItem(ADMIN_STORAGE) || "";
     const container = $("#bookings-container");
     if (!container) return;
-    container.innerHTML = '<p class="loading">Loading…</p>';
+    container.innerHTML = '<p class="loading">Loading appointments…</p>';
 
     try {
       const { res, data } = await apiFetch(`/api/bookings?key=${encodeURIComponent(key)}`);
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 503) {
         sessionStorage.removeItem(ADMIN_STORAGE);
         showAdminLogin();
-        throw new Error(data.error || "Invalid admin key");
+        setAdminStatus(data.error || "Wrong password or ADMIN_KEY not set on Netlify.", "error");
+        return false;
       }
       if (!res.ok) throw new Error(data.error || "Failed to load");
       renderAdminBookings(data.bookings || []);
+      setAdminStatus("", "");
+      return true;
     } catch (err) {
+      const local = JSON.parse(localStorage.getItem("bookings") || "[]");
+      if (local.length) {
+        renderAdminBookings(
+          local.map((b) => ({
+            ...b,
+            service: b.service || "—",
+            source: "demo (this device)",
+          }))
+        );
+        setAdminStatus(
+          "API unavailable — showing demo bookings from this browser only.",
+          "error"
+        );
+        return true;
+      }
       container.innerHTML = `<p class="empty">${escapeHtml(err.message)}</p>`;
+      setAdminStatus(err.message, "error");
+      return false;
     }
   }
 
@@ -411,32 +438,63 @@
     const list = $("#list-card");
     if (login) login.hidden = true;
     if (list) list.hidden = false;
-    loadAdminBookings();
+    list?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function handleAdminLogin() {
+    const key = $("#admin-key")?.value.trim();
+    const btn = $("#admin-login-btn");
+    if (!key) {
+      setAdminStatus("Please enter the admin key.", "error");
+      return;
+    }
+
+    setAdminStatus("Checking…", "");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Checking…";
+    }
+
+    sessionStorage.setItem(ADMIN_STORAGE, key);
+    showAdminList();
+
+    const ok = await loadAdminBookings();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "View appointments";
+    }
+
+    if (ok) {
+      setAdminStatus("Signed in.", "ok");
+    }
   }
 
   let managerReady = false;
   function initManager() {
     if (managerReady) {
-      if (sessionStorage.getItem(ADMIN_STORAGE)) showAdminList();
-      else showAdminLogin();
+      if (sessionStorage.getItem(ADMIN_STORAGE)) {
+        showAdminList();
+        loadAdminBookings();
+      } else {
+        showAdminLogin();
+      }
       return;
     }
     managerReady = true;
 
-    const loginForm = $("#login-form");
-    if (loginForm) {
-      loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const key = $("#admin-key")?.value.trim();
-        if (!key) return;
-        sessionStorage.setItem(ADMIN_STORAGE, key);
-        showAdminList();
-      });
-    }
+    $("#login-form")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleAdminLogin();
+    });
+
+    $("#admin-login-btn")?.addEventListener("click", handleAdminLogin);
 
     $("#refresh-btn")?.addEventListener("click", loadAdminBookings);
     $("#logout-btn")?.addEventListener("click", () => {
       sessionStorage.removeItem(ADMIN_STORAGE);
+      $("#admin-key").value = "";
+      setAdminStatus("", "");
       showAdminLogin();
     });
 
@@ -445,8 +503,12 @@
       showBookingApp();
     });
 
-    if (sessionStorage.getItem(ADMIN_STORAGE)) showAdminList();
-    else showAdminLogin();
+    if (sessionStorage.getItem(ADMIN_STORAGE)) {
+      showAdminList();
+      loadAdminBookings();
+    } else {
+      showAdminLogin();
+    }
   }
 
   function init() {

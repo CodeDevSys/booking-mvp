@@ -1,9 +1,23 @@
-const { calendar, ensureReady, json, error, parseBody } = require("../../server/netlify-helpers");
+const { calendar, ensureReady, json, error, parseBody, checkAdminKey } = require("../../server/netlify-helpers");
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return json(204, {});
   }
+
+  if (event.httpMethod === "GET") {
+    const auth = checkAdminKey(event);
+    if (!auth.ok) return error(auth.status || 401, auth.message);
+    try {
+      await ensureReady();
+      const bookings = await calendar.listBookings();
+      return json(200, { bookings });
+    } catch (err) {
+      console.error(err);
+      return error(500, err.message || "Server error");
+    }
+  }
+
   if (event.httpMethod !== "POST") {
     return error(405, "Method not allowed");
   }

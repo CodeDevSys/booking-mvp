@@ -19,6 +19,18 @@
   box-sizing: border-box;
 }
 
+.js-warning {
+  position: relative;
+  z-index: 10;
+  margin: 1rem;
+  padding: 0.75rem 1rem;
+  background: #3f2d1d;
+  border: 1px solid #f59e0b;
+  color: #fcd34d;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -464,6 +476,48 @@ body {
 .chat-form input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.admin-status {
+  min-height: 1.25rem;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.admin-status.error {
+  color: var(--danger);
+}
+
+.admin-status.ok {
+  color: var(--accent);
+}
+
+.admin-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.bookings-table th,
+.bookings-table td {
+  text-align: left;
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.bookings-table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
 
 .error-toast {

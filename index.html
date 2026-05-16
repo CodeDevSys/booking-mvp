@@ -117,12 +117,13 @@
     <section class="card" id="login-card">
       <h2>Manager sign in</h2>
       <p class="hint">Use the ADMIN_KEY from Netlify environment variables.</p>
-      <form id="login-form" class="form">
+      <form id="login-form" class="form" action="#" method="post">
         <label>
           Admin key
-          <input type="password" id="admin-key" required autocomplete="current-password" />
+          <input type="password" id="admin-key" required autocomplete="current-password" placeholder="Your ADMIN_KEY" />
         </label>
-        <button type="submit" class="btn primary">View appointments</button>
+        <p id="admin-status" class="admin-status" role="status"></p>
+        <button type="button" class="btn primary" id="admin-login-btn">View appointments</button>
       </form>
     </section>
 
