@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: booking-mvp
+    env: node
+    plan: free
+    buildCommand: npm install --omit=optional
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: ADMIN_KEY
+        sync: false

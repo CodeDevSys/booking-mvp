@@ -171,7 +171,7 @@
     } catch {
       slots = generateClientSlots(state.date);
       state.offlineMode = true;
-      showError("Demo mode: times shown locally. Upload netlify/functions to save on server.");
+      showError("Demo mode: times shown locally. Connect the API to save on the server.");
     }
 
     renderSlots(slots);
@@ -276,41 +276,6 @@
     });
   }
 
-  function addChatMessage(text, role) {
-    const box = $("#chat-messages");
-    if (!box) return;
-    const msg = document.createElement("div");
-    msg.className = `chat-msg ${role}`;
-    msg.textContent = text;
-    box.appendChild(msg);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  async function handleChat(e) {
-    e.preventDefault();
-    const input = $("#chat-input");
-    const text = input.value.trim();
-    if (!text) return;
-
-    addChatMessage(text, "user");
-    input.value = "";
-
-    try {
-      const { res, data } = await apiFetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          context: { service: state.service, date: state.date, step: state.step },
-        }),
-      });
-      if (!res.ok) throw new Error();
-      addChatMessage(data.reply || "OK", "bot");
-    } catch {
-      addChatMessage("Chat needs the API. Use the booking steps on the left.", "bot");
-    }
-  }
-
   const ADMIN_STORAGE = "booking_admin_key";
 
   function escapeHtml(text) {
@@ -328,23 +293,6 @@
       hour: "numeric",
       minute: "2-digit",
     });
-  }
-
-  function showBookingApp() {
-    const booking = $("#booking-app");
-    const manager = $("#manager-app");
-    if (booking) booking.hidden = false;
-    if (manager) manager.hidden = true;
-    location.hash = "";
-  }
-
-  function showManagerApp() {
-    const booking = $("#booking-app");
-    const manager = $("#manager-app");
-    if (booking) booking.hidden = true;
-    if (manager) manager.hidden = false;
-    location.hash = "manager";
-    initManager();
   }
 
   function renderAdminBookings(bookings) {
@@ -498,11 +446,6 @@
       showAdminLogin();
     });
 
-    $("#back-to-booking")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      showBookingApp();
-    });
-
     if (sessionStorage.getItem(ADMIN_STORAGE)) {
       showAdminList();
       loadAdminBookings();
@@ -512,44 +455,24 @@
   }
 
   function init() {
-    if (!$("#booking-card")) return;
+    const hasBooking = !!$("#booking-card");
+    const hasManager = !!$("#manager-app");
 
-    $("#manager-link")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      showManagerApp();
-    });
+    if (hasBooking) {
+      initDateInput();
+      setupNavigation();
+      setupServices();
 
-    if (location.hash === "#manager") showManagerApp();
+      const form = $("#details-form");
+      if (form) form.addEventListener("submit", submitBooking);
 
-    window.addEventListener("hashchange", () => {
-      if (location.hash === "#manager") showManagerApp();
-      else showBookingApp();
-    });
+      const again = $("#book-another");
+      if (again) again.addEventListener("click", resetBooking);
+    }
 
-    initDateInput();
-    setupNavigation();
-    setupServices();
+    if (hasManager) initManager();
 
-    const form = $("#details-form");
-    if (form) form.addEventListener("submit", submitBooking);
-
-    const again = $("#book-another");
-    if (again) again.addEventListener("click", resetBooking);
-
-    const chatForm = $("#chat-form");
-    if (chatForm) chatForm.addEventListener("submit", handleChat);
-
-    addChatMessage("Hi! Pick a service, then click Continue.", "bot");
-
-    apiFetch("/api/health")
-      .then(({ data }) => {
-        const badge = $("#ai-badge");
-        if (badge && data.ai) {
-          badge.textContent = "live";
-          badge.classList.add("live");
-        }
-      })
-      .catch(() => {});
+    if (!hasBooking && !hasManager) return;
 
     window.__bookingAppReady = true;
     const warn = $("#js-warning");
