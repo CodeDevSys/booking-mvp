@@ -171,7 +171,7 @@
     } catch {
       slots = generateClientSlots(state.date);
       state.offlineMode = true;
-      showError("Demo mode: times shown locally. Upload netlify/functions to save on server.");
+      showError("Demo mode: times shown locally. Connect the API to save on the server.");
     }
 
     renderSlots(slots);
