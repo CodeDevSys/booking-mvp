@@ -276,41 +276,6 @@
     });
   }
 
-  function addChatMessage(text, role) {
-    const box = $("#chat-messages");
-    if (!box) return;
-    const msg = document.createElement("div");
-    msg.className = `chat-msg ${role}`;
-    msg.textContent = text;
-    box.appendChild(msg);
-    box.scrollTop = box.scrollHeight;
-  }
-
-  async function handleChat(e) {
-    e.preventDefault();
-    const input = $("#chat-input");
-    const text = input.value.trim();
-    if (!text) return;
-
-    addChatMessage(text, "user");
-    input.value = "";
-
-    try {
-      const { res, data } = await apiFetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          context: { service: state.service, date: state.date, step: state.step },
-        }),
-      });
-      if (!res.ok) throw new Error();
-      addChatMessage(data.reply || "OK", "bot");
-    } catch {
-      addChatMessage("Chat needs the API. Use the booking steps on the left.", "bot");
-    }
-  }
-
   const ADMIN_STORAGE = "booking_admin_key";
 
   function escapeHtml(text) {
@@ -535,21 +500,6 @@
 
     const again = $("#book-another");
     if (again) again.addEventListener("click", resetBooking);
-
-    const chatForm = $("#chat-form");
-    if (chatForm) chatForm.addEventListener("submit", handleChat);
-
-    addChatMessage("Hi! Pick a service, then click Continue.", "bot");
-
-    apiFetch("/api/health")
-      .then(({ data }) => {
-        const badge = $("#ai-badge");
-        if (badge && data.ai) {
-          badge.textContent = "live";
-          badge.classList.add("live");
-        }
-      })
-      .catch(() => {});
 
     window.__bookingAppReady = true;
     const warn = $("#js-warning");
