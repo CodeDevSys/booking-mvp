@@ -1,0 +1,19 @@
+# Deployment
+
+## Render
+
+This app can run on Render as a regular Node web service.
+
+1. Open https://render.com
+2. Create a new Web Service from the GitHub repository.
+3. Use these settings:
+   - Runtime: Node
+   - Build Command: `npm install --omit=optional`
+   - Start Command: `npm start`
+4. Add environment variables:
+   - `ADMIN_KEY`: password for the management login
+   - Optional: `GOOGLE_CALENDAR_ID` and `GOOGLE_CREDENTIALS_JSON` for calendar sync
+5. Deploy the service.
+
+The booking page is available at `/`.
+The management login is available at `/admin.html`.
