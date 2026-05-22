@@ -20,7 +20,7 @@
       <div class="logo">◆</div>
       <div>
         <h1>Book an appointment</h1>
-        <p class="subtitle">Mon–Fri · 30-minute sessions · <a href="#manager" id="manager-link" style="color: var(--muted)">Manager login</a></p>
+        <p class="subtitle">Mon–Fri · 30-minute sessions</p>
       </div>
     </header>
 
@@ -95,39 +95,7 @@
       </div>
     </section>
 
-  </main>
-
-  <main class="app" id="manager-app" hidden>
-    <header class="header">
-      <div class="logo">◆</div>
-      <div>
-        <h1>Appointments</h1>
-        <p class="subtitle"><a href="#" id="back-to-booking" style="color: var(--muted)">← Back to booking</a></p>
-      </div>
-    </header>
-
-    <section class="card" id="login-card">
-      <h2>Manager sign in</h2>
-      <p class="hint">Use the ADMIN_KEY from Netlify environment variables.</p>
-      <form id="login-form" class="form" action="#" method="post">
-        <label>
-          Admin key
-          <input type="password" id="admin-key" required autocomplete="current-password" placeholder="Your ADMIN_KEY" />
-        </label>
-        <p id="admin-status" class="admin-status" role="status"></p>
-        <button type="button" class="btn primary" id="admin-login-btn">View appointments</button>
-      </form>
-    </section>
-
-    <section class="card" id="list-card" hidden>
-      <div class="admin-toolbar">
-        <button type="button" class="btn primary small" id="refresh-btn">Refresh</button>
-        <button type="button" class="btn ghost small" id="logout-btn">Sign out</button>
-        <span class="hint" id="count-label"></span>
-      </div>
-      <div id="bookings-container"><p class="loading">Loading…</p></div>
-      <p class="hint" style="margin-top:1rem">Shows server bookings only (not demo-mode saves on a customer device).</p>
-    </section>
+    <p class="management-link"><a href="./admin.html">Management login</a></p>
   </main>
 
   <script src="./script.js"></script>

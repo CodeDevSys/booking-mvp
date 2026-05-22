@@ -295,23 +295,6 @@
     });
   }
 
-  function showBookingApp() {
-    const booking = $("#booking-app");
-    const manager = $("#manager-app");
-    if (booking) booking.hidden = false;
-    if (manager) manager.hidden = true;
-    location.hash = "";
-  }
-
-  function showManagerApp() {
-    const booking = $("#booking-app");
-    const manager = $("#manager-app");
-    if (booking) booking.hidden = true;
-    if (manager) manager.hidden = false;
-    location.hash = "manager";
-    initManager();
-  }
-
   function renderAdminBookings(bookings) {
     const container = $("#bookings-container");
     const count = $("#count-label");
@@ -463,11 +446,6 @@
       showAdminLogin();
     });
 
-    $("#back-to-booking")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      showBookingApp();
-    });
-
     if (sessionStorage.getItem(ADMIN_STORAGE)) {
       showAdminList();
       loadAdminBookings();
@@ -477,29 +455,24 @@
   }
 
   function init() {
-    if (!$("#booking-card")) return;
+    const hasBooking = !!$("#booking-card");
+    const hasManager = !!$("#manager-app");
 
-    $("#manager-link")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      showManagerApp();
-    });
+    if (hasBooking) {
+      initDateInput();
+      setupNavigation();
+      setupServices();
 
-    if (location.hash === "#manager") showManagerApp();
+      const form = $("#details-form");
+      if (form) form.addEventListener("submit", submitBooking);
 
-    window.addEventListener("hashchange", () => {
-      if (location.hash === "#manager") showManagerApp();
-      else showBookingApp();
-    });
+      const again = $("#book-another");
+      if (again) again.addEventListener("click", resetBooking);
+    }
 
-    initDateInput();
-    setupNavigation();
-    setupServices();
+    if (hasManager) initManager();
 
-    const form = $("#details-form");
-    if (form) form.addEventListener("submit", submitBooking);
-
-    const again = $("#book-another");
-    if (again) again.addEventListener("click", resetBooking);
+    if (!hasBooking && !hasManager) return;
 
     window.__bookingAppReady = true;
     const warn = $("#js-warning");
