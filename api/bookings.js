@@ -48,6 +48,20 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  if (req.method === "DELETE") {
+    const auth = checkAdminKey(req);
+    if (!auth.ok) return res.status(auth.status || 401).json({ error: auth.message });
+
+    try {
+      await ensureReady();
+      const deleted = await calendar.deleteBooking(req.query?.id);
+      return res.status(200).json({ deleted });
+    } catch (err) {
+      console.error(err);
+      return res.status(err.status || 500).json({ error: err.message || "Server error" });
+    }
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }

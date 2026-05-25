@@ -18,6 +18,19 @@ exports.handler = async (event) => {
     }
   }
 
+  if (event.httpMethod === "DELETE") {
+    const auth = checkAdminKey(event);
+    if (!auth.ok) return error(auth.status || 401, auth.message);
+    try {
+      await ensureReady();
+      const deleted = await calendar.deleteBooking(event.queryStringParameters?.id);
+      return json(200, { deleted });
+    } catch (err) {
+      console.error(err);
+      return error(err.status || 500, err.message || "Server error");
+    }
+  }
+
   if (event.httpMethod !== "POST") {
     return error(405, "Method not allowed");
   }
