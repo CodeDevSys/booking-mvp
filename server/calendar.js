@@ -3,9 +3,9 @@ const path = require("path");
 
 const CREDENTIALS_PATH = path.join(__dirname, "..", "credentials.json");
 const DEFAULT_SERVICE = "Cutting Hair";
-const SLOT_MINUTES = Number(process.env.SLOT_MINUTES) || 30;
-const BUSINESS_START = Number(process.env.BUSINESS_START) ?? 9;
-const BUSINESS_END = Number(process.env.BUSINESS_END) ?? 17;
+const SLOT_MINUTES = Number(process.env.SLOT_MINUTES) || 60;
+const BUSINESS_START = Number(process.env.BUSINESS_START) || 9;
+const BUSINESS_END = Number(process.env.BUSINESS_END) || 17;
 
 const bookings = [];
 
@@ -58,27 +58,48 @@ function parseDate(dateStr) {
   return new Date(y, m - 1, d);
 }
 
-function formatSlotTime(date) {
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+function parseTimezoneOffset(value) {
+  const offset = Number(value);
+  return Number.isFinite(offset) ? offset : null;
 }
 
-function generateDaySlots(dateStr) {
-  const day = parseDate(dateStr);
-  const slots = [];
-  const start = new Date(day);
-  start.setHours(BUSINESS_START, 0, 0, 0);
-  const end = new Date(day);
-  end.setHours(BUSINESS_END, 0, 0, 0);
+function toDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
-  for (let t = new Date(start); t < end; t = new Date(t.getTime() + SLOT_MINUTES * 60000)) {
+function todayKeyForTimezone(timezoneOffset) {
+  if (timezoneOffset === null) return toDateKey(new Date());
+  const localNow = new Date(Date.now() - timezoneOffset * 60000);
+  return `${localNow.getUTCFullYear()}-${String(localNow.getUTCMonth() + 1).padStart(2, "0")}-${String(localNow.getUTCDate()).padStart(2, "0")}`;
+}
+
+function createSlotDate(dateStr, minutes, timezoneOffset) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  if (timezoneOffset === null) {
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, minutes, 0, 0);
+    return date;
+  }
+  return new Date(Date.UTC(year, month - 1, day, 0, minutes) + timezoneOffset * 60000);
+}
+
+function formatSlotTime(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+function generateDaySlots(dateStr, timezoneOffset) {
+  const slots = [];
+  const startMinutes = BUSINESS_START * 60;
+  const endMinutes = BUSINESS_END * 60;
+
+  for (let minutes = startMinutes; minutes < endMinutes; minutes += SLOT_MINUTES) {
+    const t = createSlotDate(dateStr, minutes, timezoneOffset);
     slots.push({
       start: t.toISOString(),
       end: new Date(t.getTime() + SLOT_MINUTES * 60000).toISOString(),
-      label: formatSlotTime(t),
+      label: formatSlotTime(minutes),
     });
   }
   return slots;
@@ -94,11 +115,9 @@ function isSlotBooked(slotStart, bookedRanges) {
   });
 }
 
-async function getBusyRanges(dateStr) {
-  const dayStart = parseDate(dateStr);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(dayStart);
-  dayEnd.setDate(dayEnd.getDate() + 1);
+async function getBusyRanges(dateStr, timezoneOffset) {
+  const dayStart = createSlotDate(dateStr, 0, timezoneOffset);
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60000);
 
   if (calendarClient && calendarId) {
     const res = await calendarClient.freebusy.query({
@@ -117,17 +136,16 @@ async function getBusyRanges(dateStr) {
     .map((b) => ({ start: b.start, end: b.end }));
 }
 
-async function getAvailableSlots(dateStr) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const requested = parseDate(dateStr);
-  if (requested < today) return [];
+async function getAvailableSlots(dateStr, options = {}) {
+  const timezoneOffset = parseTimezoneOffset(options.timezoneOffset);
+  if (dateStr < todayKeyForTimezone(timezoneOffset)) return [];
 
+  const requested = parseDate(dateStr);
   const isWeekend = requested.getDay() === 0 || requested.getDay() === 6;
   if (isWeekend) return [];
 
-  const busy = await getBusyRanges(dateStr);
-  const allSlots = generateDaySlots(dateStr);
+  const busy = await getBusyRanges(dateStr, timezoneOffset);
+  const allSlots = generateDaySlots(dateStr, timezoneOffset);
   const now = Date.now();
 
   return allSlots.filter((slot) => {

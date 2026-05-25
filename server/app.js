@@ -41,11 +41,11 @@ app.get("/api/health", (_req, res) => {
 
 app.get("/api/slots", async (req, res, next) => {
   try {
-    const { date } = req.query;
+    const { date, tzOffset } = req.query;
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return res.status(400).json({ error: "date query required (YYYY-MM-DD)" });
     }
-    const slots = await calendar.getAvailableSlots(date);
+    const slots = await calendar.getAvailableSlots(date, { timezoneOffset: tzOffset });
     res.json({ date, slots });
   } catch (err) {
     next(err);
