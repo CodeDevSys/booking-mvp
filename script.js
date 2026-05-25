@@ -394,12 +394,13 @@
         <td>${escapeHtml(b.name || "—")}</td>
         <td>${escapeHtml(b.email || "—")}</td>
         <td>${escapeHtml(b.notes || "—")}</td>
+        <td><button type="button" class="btn ghost small delete-booking-btn" data-id="${encodeURIComponent(String(b.id || ""))}" data-source="${escapeHtml(b.source || "server")}" ${b.id ? "" : "disabled"}>Delete</button></td>
       </tr>`
       )
       .join("");
 
     container.innerHTML = `<table class="bookings-table">
-        <thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Customer</th><th>Email</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Customer</th><th>Email</th><th>Notes</th><th>Action</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
   }
 
@@ -442,6 +443,43 @@
       container.innerHTML = `<p class="empty">${escapeHtml(err.message)}</p>`;
       setAdminStatus(err.message, "error");
       return false;
+    }
+  }
+
+  function deleteLocalBooking(id) {
+    const bookings = getLocalBookings().filter((booking) => String(booking.id) !== String(id));
+    localStorage.setItem("bookings", JSON.stringify(bookings));
+  }
+
+  async function handleDeleteBooking(e) {
+    const btn = e.target.closest(".delete-booking-btn");
+    if (!btn) return;
+
+    const id = decodeURIComponent(btn.dataset.id || "");
+    const source = btn.dataset.source || "server";
+    if (!id) return;
+
+    if (!window.confirm("Delete this appointment?")) return;
+
+    btn.disabled = true;
+    btn.textContent = "Deleting…";
+
+    try {
+      if (source === "browser") {
+        deleteLocalBooking(id);
+      } else {
+        const key = sessionStorage.getItem(ADMIN_STORAGE) || "";
+        const params = new URLSearchParams({ id, key });
+        const { res, data } = await apiFetch(`/api/bookings?${params.toString()}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error(data.error || "Delete failed");
+      }
+      await loadAdminBookings();
+    } catch (err) {
+      showError(err.message || "Delete failed");
+      btn.disabled = false;
+      btn.textContent = "Delete";
     }
   }
 
@@ -510,6 +548,7 @@
     $("#admin-login-btn")?.addEventListener("click", handleAdminLogin);
 
     $("#refresh-btn")?.addEventListener("click", loadAdminBookings);
+    $("#bookings-container")?.addEventListener("click", handleDeleteBooking);
     $("#logout-btn")?.addEventListener("click", () => {
       sessionStorage.removeItem(ADMIN_STORAGE);
       $("#admin-key").value = "";

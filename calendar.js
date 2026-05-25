@@ -220,6 +220,33 @@ async function createBooking({ date, start, name, email, notes, service }) {
   return booking;
 }
 
+async function deleteBooking(id) {
+  if (!id) {
+    const err = new Error("booking id required");
+    err.status = 400;
+    throw err;
+  }
+
+  if (calendarClient && calendarId) {
+    await calendarClient.events.delete({
+      calendarId,
+      eventId: id,
+    });
+    return { id };
+  }
+
+  const index = bookings.findIndex((booking) => booking.id === id);
+  if (index === -1) {
+    const err = new Error("Booking not found");
+    err.status = 404;
+    throw err;
+  }
+
+  const [deleted] = bookings.splice(index, 1);
+  saveStoredBookings();
+  return deleted;
+}
+
 async function listBookings() {
   if (calendarClient && calendarId) {
     const now = new Date().toISOString();
@@ -255,6 +282,7 @@ module.exports = {
   initGoogleCalendar,
   getAvailableSlots,
   createBooking,
+  deleteBooking,
   getBookings: () => sortBookings(bookings),
   listBookings,
 };

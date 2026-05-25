@@ -66,6 +66,19 @@ app.get("/api/bookings", async (req, res, next) => {
   }
 });
 
+app.delete("/api/bookings", async (req, res, next) => {
+  try {
+    const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
+    if (req.query.key !== expected) {
+      return res.status(401).json({ error: "Wrong password. Use the management password." });
+    }
+    const deleted = await calendar.deleteBooking(req.query.id);
+    res.json({ deleted });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.post("/api/bookings", async (req, res, next) => {
   try {
     const { date, start, name, email, notes, service } = req.body;

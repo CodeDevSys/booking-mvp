@@ -7,6 +7,7 @@ const calendar = require("./calendar");
 const openai = require("./openai");
 
 const ROOT = path.join(__dirname, "..");
+const DEFAULT_ADMIN_KEY = "123456";
 const app = express();
 
 const calendarReady = calendar.initGoogleCalendar().then((connected) => {
@@ -47,6 +48,32 @@ app.get("/api/slots", async (req, res, next) => {
     }
     const slots = await calendar.getAvailableSlots(date, { timezoneOffset: tzOffset });
     res.json({ date, slots });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/api/bookings", async (req, res, next) => {
+  try {
+    const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
+    if (req.query.key !== expected) {
+      return res.status(401).json({ error: "Wrong password. Use the management password." });
+    }
+    const bookings = await calendar.listBookings();
+    res.json({ bookings });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete("/api/bookings", async (req, res, next) => {
+  try {
+    const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
+    if (req.query.key !== expected) {
+      return res.status(401).json({ error: "Wrong password. Use the management password." });
+    }
+    const deleted = await calendar.deleteBooking(req.query.id);
+    res.json({ deleted });
   } catch (err) {
     next(err);
   }
