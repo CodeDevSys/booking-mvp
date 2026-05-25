@@ -1,9 +1,11 @@
 (function () {
   "use strict";
 
+  const DEFAULT_SERVICE = "Cutting Hair";
+
   const state = {
     step: 1,
-    service: "Consultation",
+    service: DEFAULT_SERVICE,
     date: null,
     slot: null,
     offlineMode: false,
@@ -235,7 +237,7 @@
   }
 
   function resetBooking() {
-    state.service = "Consultation";
+    state.service = DEFAULT_SERVICE;
     state.date = null;
     state.slot = null;
     state.offlineMode = false;
@@ -245,7 +247,7 @@
     $("#date-next").disabled = true;
     $("#time-next").disabled = true;
     $$(".service-btn").forEach((b) => {
-      b.classList.toggle("selected", b.dataset.service === "Consultation");
+      b.classList.toggle("selected", b.dataset.service === DEFAULT_SERVICE);
     });
     $("#details-form").reset();
     showStep(1);

@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const CREDENTIALS_PATH = path.join(__dirname, "..", "credentials.json");
+const DEFAULT_SERVICE = "Cutting Hair";
 const SLOT_MINUTES = Number(process.env.SLOT_MINUTES) || 30;
 const BUSINESS_START = Number(process.env.BUSINESS_START) ?? 9;
 const BUSINESS_END = Number(process.env.BUSINESS_END) ?? 17;
@@ -145,7 +146,7 @@ async function createBooking({ date, start, name, email, notes, service }) {
     name,
     email,
     notes: notes || "",
-    service: service || "Consultation",
+    service: service || DEFAULT_SERVICE,
     createdAt: new Date().toISOString(),
   };
 
