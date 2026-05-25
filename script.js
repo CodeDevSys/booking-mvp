@@ -386,7 +386,7 @@
       if (res.status === 401 || res.status === 503) {
         sessionStorage.removeItem(ADMIN_STORAGE);
         showAdminLogin();
-        setAdminStatus(data.error || "Wrong password or ADMIN_KEY not set on Netlify.", "error");
+        setAdminStatus(data.error || "Wrong management password.", "error");
         return false;
       }
       if (!res.ok) throw new Error(data.error || "Failed to load");
