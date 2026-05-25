@@ -6,11 +6,37 @@ const DEFAULT_SERVICE = "Cutting Hair";
 const SLOT_MINUTES = Number(process.env.SLOT_MINUTES) || 60;
 const BUSINESS_START = Number(process.env.BUSINESS_START) || 9;
 const BUSINESS_END = Number(process.env.BUSINESS_END) || 17;
+const BOOKINGS_DIR = process.env.BOOKINGS_DATA_DIR || path.join(__dirname, "..", "data");
+const BOOKINGS_FILE = path.join(BOOKINGS_DIR, "bookings.json");
 
-const bookings = [];
+const bookings = loadStoredBookings();
 
 let calendarClient = null;
 let calendarId = null;
+
+function loadStoredBookings() {
+  try {
+    if (!fs.existsSync(BOOKINGS_FILE)) return [];
+    const data = JSON.parse(fs.readFileSync(BOOKINGS_FILE, "utf8"));
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.warn("Could not load stored bookings, using memory only:", err.message);
+    return [];
+  }
+}
+
+function saveStoredBookings() {
+  try {
+    fs.mkdirSync(BOOKINGS_DIR, { recursive: true });
+    fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
+  } catch (err) {
+    console.warn("Could not save bookings to disk, keeping memory only:", err.message);
+  }
+}
+
+function sortBookings(list) {
+  return [...list].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+}
 
 function loadGoogleCredentials() {
   if (process.env.GOOGLE_CREDENTIALS_JSON) {
@@ -188,6 +214,7 @@ async function createBooking({ date, start, name, email, notes, service }) {
       throw err;
     }
     bookings.push(booking);
+    saveStoredBookings();
   }
 
   return booking;
@@ -221,13 +248,13 @@ async function listBookings() {
       };
     });
   }
-  return bookings.map((b) => ({ ...b, source: "memory" }));
+  return sortBookings(bookings.map((b) => ({ ...b, source: "server" })));
 }
 
 module.exports = {
   initGoogleCalendar,
   getAvailableSlots,
   createBooking,
-  getBookings: () => [...bookings],
+  getBookings: () => sortBookings(bookings),
   listBookings,
 };

@@ -325,15 +325,49 @@
     return d.innerHTML;
   }
 
-  function formatWhen(start) {
+  function formatBookingDate(start) {
     if (!start) return "—";
-    return new Date(start).toLocaleString("en-US", {
+    return new Date(start).toLocaleDateString("en-US", {
       weekday: "short",
       month: "short",
       day: "numeric",
-      hour: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function formatBookingTime(start) {
+    if (!start) return "—";
+    return new Date(start).toLocaleTimeString("en-US", {
+      hour: "2-digit",
       minute: "2-digit",
     });
+  }
+
+  function getLocalBookings() {
+    try {
+      const local = JSON.parse(localStorage.getItem("bookings") || "[]");
+      return Array.isArray(local)
+        ? local.map((b) => ({
+            ...b,
+            id: b.id || `${b.start || ""}-${b.email || ""}`,
+            source: "browser",
+          }))
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function mergeBookings(serverBookings, localBookings) {
+    const seen = new Set();
+    return [...serverBookings, ...localBookings]
+      .filter((booking) => {
+        const key = booking.id || `${booking.start || ""}-${booking.email || ""}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => new Date(a.start || 0).getTime() - new Date(b.start || 0).getTime());
   }
 
   function renderAdminBookings(bookings) {
@@ -342,7 +376,7 @@
     if (!container) return;
 
     if (!bookings.length) {
-      container.innerHTML = '<p class="empty">No upcoming appointments yet.</p>';
+      container.innerHTML = '<p class="empty">No booked appointments yet.</p>';
       if (count) count.textContent = "0 appointments";
       return;
     }
@@ -354,7 +388,8 @@
     const rows = bookings
       .map(
         (b) => `<tr>
-        <td>${formatWhen(b.start)}</td>
+        <td>${formatBookingDate(b.start)}</td>
+        <td>${formatBookingTime(b.start)}</td>
         <td>${escapeHtml(b.service || "—")}</td>
         <td>${escapeHtml(b.name || "—")}</td>
         <td>${escapeHtml(b.email || "—")}</td>
@@ -364,7 +399,7 @@
       .join("");
 
     container.innerHTML = `<table class="bookings-table">
-        <thead><tr><th>When</th><th>Service</th><th>Customer</th><th>Email</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Date</th><th>Time</th><th>Service</th><th>Customer</th><th>Email</th><th>Notes</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
   }
 
@@ -390,21 +425,16 @@
         return false;
       }
       if (!res.ok) throw new Error(data.error || "Failed to load");
-      renderAdminBookings(data.bookings || []);
+      const bookings = mergeBookings(data.bookings || [], getLocalBookings());
+      renderAdminBookings(bookings);
       setAdminStatus("", "");
       return true;
     } catch (err) {
-      const local = JSON.parse(localStorage.getItem("bookings") || "[]");
+      const local = getLocalBookings();
       if (local.length) {
-        renderAdminBookings(
-          local.map((b) => ({
-            ...b,
-            service: b.service || "—",
-            source: "demo (this device)",
-          }))
-        );
+        renderAdminBookings(local);
         setAdminStatus(
-          "API unavailable — showing demo bookings from this browser only.",
+          "API unavailable — showing appointments saved in this browser.",
           "error"
         );
         return true;
