@@ -3,6 +3,8 @@ process.env.NETLIFY = "true";
 const calendar = require("./calendar");
 const openai = require("./openai");
 
+const DEFAULT_ADMIN_KEY = "123456";
+
 let ready = null;
 
 function ensureReady() {
@@ -37,20 +39,13 @@ function parseBody(event) {
 }
 
 function checkAdminKey(event) {
-  const expected = process.env.ADMIN_KEY;
-  if (!expected) {
-    return {
-      ok: false,
-      message: "ADMIN_KEY is not set. Add it in Netlify → Site configuration → Environment variables, then redeploy.",
-      status: 503,
-    };
-  }
+  const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
   const provided =
     event.queryStringParameters?.key ||
     event.headers?.["x-admin-key"] ||
     event.headers?.["X-Admin-Key"];
   if (provided !== expected) {
-    return { ok: false, message: "Wrong password. Use the exact ADMIN_KEY from Netlify.", status: 401 };
+    return { ok: false, message: "Wrong password. Use the management password.", status: 401 };
   }
   return { ok: true };
 }
