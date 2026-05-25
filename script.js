@@ -2,6 +2,9 @@
   "use strict";
 
   const DEFAULT_SERVICE = "Cutting Hair";
+  const SLOT_MINUTES = 60;
+  const BUSINESS_START = 9;
+  const BUSINESS_END = 17;
 
   const state = {
     step: 1,
@@ -13,6 +16,23 @@
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
+
+  function pad2(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function toDateInputValue(date) {
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  }
+
+  function parseLocalDate(dateStr) {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  function formatTimeLabel(date) {
+    return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  }
 
   function formatDateLabel(dateStr) {
     const d = new Date(dateStr + "T12:00:00");
@@ -68,34 +88,30 @@
   }
 
   function generateClientSlots(dateStr) {
-    const day = new Date(dateStr + "T12:00:00");
+    const day = parseLocalDate(dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (day < today || day.getDay() === 0 || day.getDay() === 6) return [];
 
     const slots = [];
     const start = new Date(day);
-    start.setHours(9, 0, 0, 0);
+    start.setHours(BUSINESS_START, 0, 0, 0);
     const end = new Date(day);
-    end.setHours(17, 0, 0, 0);
+    end.setHours(BUSINESS_END, 0, 0, 0);
     const now = Date.now();
 
-    for (let t = new Date(start); t < end; t = new Date(t.getTime() + 30 * 60000)) {
+    for (let t = new Date(start); t < end; t = new Date(t.getTime() + SLOT_MINUTES * 60000)) {
       if (t.getTime() <= now) continue;
       slots.push({
         start: t.toISOString(),
-        end: new Date(t.getTime() + 30 * 60000).toISOString(),
-        label: t.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
+        end: new Date(t.getTime() + SLOT_MINUTES * 60000).toISOString(),
+        label: formatTimeLabel(t),
       });
     }
     return slots;
   }
 
-  function renderSlots(slots) {
+  function renderSlots(slots, emptyMessage = "No appointment times are available for this date. Please choose another date.") {
     const grid = $("#slots-grid");
     const timeNext = $("#time-next");
     grid.innerHTML = "";
@@ -103,7 +119,7 @@
     timeNext.disabled = true;
 
     if (!slots.length) {
-      grid.innerHTML = '<p class="empty">No times available this day. Try another date.</p>';
+      grid.innerHTML = `<p class="empty">${emptyMessage}</p>`;
       return;
     }
 
@@ -128,18 +144,20 @@
     if (!input) return;
 
     const today = new Date();
-    input.min = today.toISOString().split("T")[0];
+    input.min = toDateInputValue(today);
     const max = new Date(today);
     max.setDate(max.getDate() + 60);
-    input.max = max.toISOString().split("T")[0];
+    input.max = toDateInputValue(max);
 
-    input.addEventListener("change", () => {
+    input.addEventListener("change", async () => {
       state.date = input.value;
+      state.slot = null;
       const next = $("#date-next");
       const hint = $("#date-hint");
 
       if (!state.date) {
         next.disabled = true;
+        renderSlots([], "Select a date to see available times.");
         return;
       }
 
@@ -148,34 +166,45 @@
         hint.textContent = "Weekends are unavailable. Please pick a weekday.";
         next.disabled = true;
         state.date = null;
+        renderSlots([], "Pick an available weekday to see times.");
         return;
       }
 
       hint.textContent = formatDateLabel(state.date);
       next.disabled = false;
+      showStep(3);
+      await loadSlots(state.date);
     });
   }
 
-  async function loadSlots() {
+  async function loadSlots(dateStr = state.date) {
     const grid = $("#slots-grid");
     const label = $("#selected-date-label");
-    if (!grid || !label) return;
+    if (!grid || !label || !dateStr) return;
 
-    label.textContent = formatDateLabel(state.date);
+    label.textContent = formatDateLabel(dateStr);
     grid.innerHTML = '<p class="loading">Loading times…</p>';
+    state.slot = null;
+    const timeNext = $("#time-next");
+    if (timeNext) timeNext.disabled = true;
 
     let slots = [];
     try {
-      const { res, data } = await apiFetch(`/api/slots?date=${encodeURIComponent(state.date)}`);
+      const params = new URLSearchParams({
+        date: dateStr,
+        tzOffset: String(new Date().getTimezoneOffset()),
+      });
+      const { res, data } = await apiFetch(`/api/slots?${params.toString()}`);
       if (!res.ok) throw new Error(data.error || "Failed to load slots");
-      slots = data.slots;
+      slots = Array.isArray(data.slots) ? data.slots : [];
       state.offlineMode = false;
     } catch {
-      slots = generateClientSlots(state.date);
+      slots = generateClientSlots(dateStr);
       state.offlineMode = true;
       showError("Demo mode: times shown locally. Connect the API to save on the server.");
     }
 
+    if (dateStr !== state.date) return;
     renderSlots(slots);
   }
 
@@ -193,6 +222,10 @@
 
   async function submitBooking(e) {
     e.preventDefault();
+    if (!state.slot) {
+      showError("Please choose an appointment time before confirming.");
+      return;
+    }
     const form = e.target;
     const btn = $("#submit-btn");
     const fd = new FormData(form);
@@ -258,7 +291,13 @@
       btn.addEventListener("click", async () => {
         const next = Number(btn.dataset.next);
         if (next === 3 && state.date) await loadSlots();
-        if (next === 4) updateSummary();
+        if (next === 4) {
+          if (!state.slot) {
+            showError("Please choose an appointment time before continuing.");
+            return;
+          }
+          updateSummary();
+        }
         showStep(next);
       });
     });

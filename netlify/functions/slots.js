@@ -7,7 +7,9 @@ exports.handler = async (event) => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return error(400, "date query required (YYYY-MM-DD)");
     }
-    const slots = await calendar.getAvailableSlots(date);
+    const slots = await calendar.getAvailableSlots(date, {
+      timezoneOffset: event.queryStringParameters?.tzOffset,
+    });
     return json(200, { date, slots });
   } catch (err) {
     console.error(err);
