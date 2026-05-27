@@ -1,0 +1,31 @@
+# Einmalig ausführen: spiegelt Branch nexora-landing → Repo nexora-landing
+# Benötigt Repository Secret: NEXORA_REPO_TOKEN (GitHub PAT mit repo-Rechten)
+
+name: Publish NEXORA to nexora-landing repo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout nexora-landing branch
+        uses: actions/checkout@v4
+        with:
+          ref: nexora-landing
+          fetch-depth: 0
+
+      - name: Push to CodeDevSys/nexora-landing
+        env:
+          TOKEN: ${{ secrets.NEXORA_REPO_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Secret NEXORA_REPO_TOKEN fehlt. Erstelle ein PAT: Settings → Developer settings → PAT (repo scope)."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add dest "https://x-access-token:${TOKEN}@github.com/CodeDevSys/nexora-landing.git"
+          git push dest HEAD:main --force
+          echo "✅ Published to https://github.com/CodeDevSys/nexora-landing"
