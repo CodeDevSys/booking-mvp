@@ -10,6 +10,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: ADMIN_USER
+        value: admin
       - key: ADMIN_KEY
         value: "123456"
       - key: SERVE_STATIC

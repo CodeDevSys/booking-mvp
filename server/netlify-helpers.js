@@ -3,6 +3,7 @@ process.env.NETLIFY = "true";
 const calendar = require("./calendar");
 const openai = require("./openai");
 
+const DEFAULT_ADMIN_USER = "admin";
 const DEFAULT_ADMIN_KEY = "123456";
 
 let ready = null;
@@ -39,13 +40,18 @@ function parseBody(event) {
 }
 
 function checkAdminKey(event) {
+  const expectedUser = process.env.ADMIN_USER || DEFAULT_ADMIN_USER;
   const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
+  const providedUser =
+    event.queryStringParameters?.user ||
+    event.headers?.["x-admin-user"] ||
+    event.headers?.["X-Admin-User"];
   const provided =
     event.queryStringParameters?.key ||
     event.headers?.["x-admin-key"] ||
     event.headers?.["X-Admin-Key"];
-  if (provided !== expected) {
-    return { ok: false, message: "Wrong password. Use the management password.", status: 401 };
+  if (providedUser !== expectedUser || provided !== expected) {
+    return { ok: false, message: "Wrong username or password.", status: 401 };
   }
   return { ok: true };
 }

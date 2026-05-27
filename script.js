@@ -317,6 +317,7 @@
     });
   }
 
+  const ADMIN_USER_STORAGE = "booking_admin_user";
   const ADMIN_STORAGE = "booking_admin_key";
 
   function escapeHtml(text) {
@@ -412,17 +413,20 @@
   }
 
   async function loadAdminBookings() {
+    const user = sessionStorage.getItem(ADMIN_USER_STORAGE) || "";
     const key = sessionStorage.getItem(ADMIN_STORAGE) || "";
     const container = $("#bookings-container");
     if (!container) return;
     container.innerHTML = '<p class="loading">Loading appointments…</p>';
 
     try {
-      const { res, data } = await apiFetch(`/api/bookings?key=${encodeURIComponent(key)}`);
+      const params = new URLSearchParams({ user, key });
+      const { res, data } = await apiFetch(`/api/bookings?${params.toString()}`);
       if (res.status === 401 || res.status === 503) {
+        sessionStorage.removeItem(ADMIN_USER_STORAGE);
         sessionStorage.removeItem(ADMIN_STORAGE);
         showAdminLogin();
-        setAdminStatus(data.error || "Wrong management password.", "error");
+        setAdminStatus(data.error || "Wrong username or password.", "error");
         return false;
       }
       if (!res.ok) throw new Error(data.error || "Failed to load");
@@ -468,8 +472,9 @@
       if (source === "browser") {
         deleteLocalBooking(id);
       } else {
+        const user = sessionStorage.getItem(ADMIN_USER_STORAGE) || "";
         const key = sessionStorage.getItem(ADMIN_STORAGE) || "";
-        const params = new URLSearchParams({ id, key });
+        const params = new URLSearchParams({ id, user, key });
         const { res, data } = await apiFetch(`/api/bookings?${params.toString()}`, {
           method: "DELETE",
         });
@@ -499,10 +504,15 @@
   }
 
   async function handleAdminLogin() {
+    const user = $("#admin-user")?.value.trim();
     const key = $("#admin-key")?.value.trim();
     const btn = $("#admin-login-btn");
+    if (!user) {
+      setAdminStatus("Please enter the username.", "error");
+      return;
+    }
     if (!key) {
-      setAdminStatus("Please enter the admin key.", "error");
+      setAdminStatus("Please enter the password.", "error");
       return;
     }
 
@@ -512,6 +522,7 @@
       btn.textContent = "Checking…";
     }
 
+    sessionStorage.setItem(ADMIN_USER_STORAGE, user);
     sessionStorage.setItem(ADMIN_STORAGE, key);
     showAdminList();
 
@@ -530,7 +541,7 @@
   let managerReady = false;
   function initManager() {
     if (managerReady) {
-      if (sessionStorage.getItem(ADMIN_STORAGE)) {
+      if (sessionStorage.getItem(ADMIN_USER_STORAGE) && sessionStorage.getItem(ADMIN_STORAGE)) {
         showAdminList();
         loadAdminBookings();
       } else {
@@ -550,13 +561,15 @@
     $("#refresh-btn")?.addEventListener("click", loadAdminBookings);
     $("#bookings-container")?.addEventListener("click", handleDeleteBooking);
     $("#logout-btn")?.addEventListener("click", () => {
+      sessionStorage.removeItem(ADMIN_USER_STORAGE);
       sessionStorage.removeItem(ADMIN_STORAGE);
+      $("#admin-user").value = "";
       $("#admin-key").value = "";
       setAdminStatus("", "");
       showAdminLogin();
     });
 
-    if (sessionStorage.getItem(ADMIN_STORAGE)) {
+    if (sessionStorage.getItem(ADMIN_USER_STORAGE) && sessionStorage.getItem(ADMIN_STORAGE)) {
       showAdminList();
       loadAdminBookings();
     } else {

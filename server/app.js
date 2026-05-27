@@ -7,6 +7,7 @@ const calendar = require("./calendar");
 const openai = require("./openai");
 
 const ROOT = path.join(__dirname, "..");
+const DEFAULT_ADMIN_USER = "admin";
 const DEFAULT_ADMIN_KEY = "123456";
 const app = express();
 
@@ -63,9 +64,10 @@ app.get("/api/slots", async (req, res, next) => {
 
 app.get("/api/bookings", async (req, res, next) => {
   try {
+    const expectedUser = process.env.ADMIN_USER || DEFAULT_ADMIN_USER;
     const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
-    if (req.query.key !== expected) {
-      return res.status(401).json({ error: "Wrong password. Use the management password." });
+    if (req.query.user !== expectedUser || req.query.key !== expected) {
+      return res.status(401).json({ error: "Wrong username or password." });
     }
     const bookings = await calendar.listBookings();
     res.json({ bookings });
@@ -76,9 +78,10 @@ app.get("/api/bookings", async (req, res, next) => {
 
 app.delete("/api/bookings", async (req, res, next) => {
   try {
+    const expectedUser = process.env.ADMIN_USER || DEFAULT_ADMIN_USER;
     const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
-    if (req.query.key !== expected) {
-      return res.status(401).json({ error: "Wrong password. Use the management password." });
+    if (req.query.user !== expectedUser || req.query.key !== expected) {
+      return res.status(401).json({ error: "Wrong username or password." });
     }
     const deleted = await calendar.deleteBooking(req.query.id);
     res.json({ deleted });

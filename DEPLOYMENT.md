@@ -9,7 +9,10 @@
 | Booking | https://booking-mvp.onrender.com/ |
 | Admin | https://booking-mvp.onrender.com/admin.html |
 
-Default admin password: `123456` (set env `ADMIN_KEY` on Render to change).
+Default admin login:
+
+- Username: `admin` (set env `ADMIN_USER` on Render to change)
+- Password: `123456` (set env `ADMIN_KEY` on Render to change)
 
 Pushes to branch **`main`** auto-deploy if the Render service is linked to this repo.
 

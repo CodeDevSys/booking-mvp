@@ -1,5 +1,6 @@
 const calendar = require("../server/calendar");
 
+const DEFAULT_ADMIN_USER = "admin";
 const DEFAULT_ADMIN_KEY = "123456";
 
 let ready = null;
@@ -20,11 +21,13 @@ function getBody(req) {
 }
 
 function checkAdminKey(req) {
+  const expectedUser = process.env.ADMIN_USER || DEFAULT_ADMIN_USER;
   const expected = process.env.ADMIN_KEY || DEFAULT_ADMIN_KEY;
 
+  const providedUser = req.query?.user || req.headers?.["x-admin-user"];
   const provided = req.query?.key || req.headers?.["x-admin-key"];
-  if (provided !== expected) {
-    return { ok: false, message: "Wrong password. Use the management password.", status: 401 };
+  if (providedUser !== expectedUser || provided !== expected) {
+    return { ok: false, message: "Wrong username or password.", status: 401 };
   }
   return { ok: true };
 }
