@@ -17,3 +17,10 @@ This app can run on Render as a regular Node web service.
 
 The booking page is available at `/`.
 The management login is available at `/admin.html`.
+
+## NEXORA landing page (separate project)
+
+The marketing landing page is **not** part of this repo's `main` branch. It is maintained separately:
+
+- **Branch:** [nexora-landing](https://github.com/CodeDevSys/booking-mvp/tree/nexora-landing)
+- **New repository (recommended):** create `nexora-landing` on GitHub and push from that branch (see branch README).
