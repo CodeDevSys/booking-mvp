@@ -2,3 +2,7 @@ node_modules/
 .env
 .netlify/
 data/bookings.json
+.next/
+out/
+nexora-landing/
+nexora-tunnel-url.log
