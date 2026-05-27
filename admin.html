@@ -23,8 +23,12 @@
 
     <section class="card" id="login-card">
       <h2>Manager sign in</h2>
-      <p class="hint">Use the management password.</p>
+      <p class="hint">Use the management username and password.</p>
       <form id="login-form" class="form" action="#" method="post">
+        <label>
+          Username
+          <input type="text" id="admin-user" required autocomplete="username" placeholder="admin" />
+        </label>
         <label>
           Password
           <input type="password" id="admin-key" required autocomplete="current-password" placeholder="Management password" />

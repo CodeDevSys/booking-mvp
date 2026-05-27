@@ -11,6 +11,7 @@ This app can run on Render as a regular Node web service.
    - Build Command: `npm install --omit=optional`
    - Start Command: `npm start`
 4. Add environment variables:
+   - Optional: `ADMIN_USER`: username for the management login. If it is not set, the app uses `admin`.
    - Optional: `ADMIN_KEY`: password for the management login. If it is not set, the app uses `123456`.
    - Optional: `GOOGLE_CALENDAR_ID` and `GOOGLE_CREDENTIALS_JSON` for calendar sync
 5. Deploy the service.
