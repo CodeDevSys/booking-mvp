@@ -28,8 +28,16 @@ app.use("/api", async (_req, _res, next) => {
   }
 });
 
-if (!process.env.NETLIFY) {
-  app.use(express.static(ROOT));
+// Render & local: Express serves HTML/JS/CSS. Netlify CDN serves static files; functions only handle /api.
+const serveStatic = process.env.SERVE_STATIC !== "false";
+if (serveStatic) {
+  app.use(express.static(ROOT, { index: ["index.html"] }));
+  app.get("/", (_req, res) => {
+    res.sendFile(path.join(ROOT, "index.html"));
+  });
+  app.get("/admin.html", (_req, res) => {
+    res.sendFile(path.join(ROOT, "admin.html"));
+  });
 }
 
 app.get("/api/health", (_req, res) => {

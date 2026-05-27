@@ -1,25 +1,25 @@
 # Booking MVP
 
-Appointment booking SaaS for businesses — customer booking UI, manager dashboard, calendar sync.
+Salon appointment booking — customer booking flow and manager admin.
 
-## Related project
+## Live (Render)
 
-The **NEXORA marketing website** is a separate repository:
+- **Booking:** https://booking-mvp.onrender.com  
+- **Admin:** https://booking-mvp.onrender.com/admin.html  
 
-**https://github.com/CodeDevSys/nexora-landing**
+Admin password default: `123456`
 
-(Booking MVP and NEXORA are not linked in code — two independent projects.)
-
-## Quick start
+## Local
 
 ```bash
 npm install
 npm run dev
 ```
 
-- Booking page: http://localhost:3000/
-- Admin: http://localhost:3000/admin.html
-
 ## Deploy
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+## NEXORA landing page
+
+Marketing site is separate (branch `nexora-landing`).
