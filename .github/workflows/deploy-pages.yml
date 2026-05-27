@@ -1,0 +1,58 @@
+name: Deploy NEXORA to GitHub Pages
+
+on:
+  push:
+    branches: [nexora-landing]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static marketing site
+        env:
+          STATIC_EXPORT: "1"
+          GITHUB_PAGES: "1"
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+          NEXTAUTH_SECRET: build-placeholder-secret-min-32-chars
+          NEXTAUTH_URL: https://codedevsys.github.io/booking-mvp
+        run: |
+          rm -rf app/api app/dashboard
+          mv middleware.ts middleware.ts.bak
+          npm run build
+          test -d out
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
