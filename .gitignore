@@ -1,0 +1,9 @@
+node_modules/
+.env
+.netlify/
+data/bookings.json
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+prisma/*.db
