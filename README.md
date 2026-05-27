@@ -1,15 +1,15 @@
 # NEXORA Landing Page
 
-Production-ready SaaS marketing site for **NEXORA** — AI-powered scheduling & automation.
+Marketing site for **NEXORA** — AI-powered scheduling & automation (Next.js, Tailwind, Stripe-ready).
 
-> **Note:** This repository is separate from [booking-mvp](https://github.com/CodeDevSys/booking-mvp), which contains the appointment booking SaaS product.
+## Separate from Booking MVP
 
-## Stack
+| Repository | Purpose |
+|------------|---------|
+| [booking-mvp](https://github.com/CodeDevSys/booking-mvp) | Live appointment booking product |
+| **nexora-landing** (this repo) | Marketing, pricing, legal pages |
 
-- Next.js 14 (App Router) + Tailwind CSS
-- Stripe Billing (14-day trial → monthly subscription)
-- NextAuth (email magic links)
-- Prisma + PostgreSQL (multi-tenant ready)
+No shared code or database between the two.
 
 ## Quick start
 
@@ -20,23 +20,6 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-Open http://localhost:3000
-
-## Environment
-
-See `.env.example` for Stripe, database, and email configuration.
-
-Stripe setup: `scripts/stripe-setup.md`
-
 ## Deploy
 
-- **Render:** `render.yaml`
-- **Netlify:** `netlify.toml` (requires `@netlify/plugin-nextjs`)
-
-## Legal (Germany)
-
-- `/impressum` — Impressum
-- `/datenschutz` — Datenschutzerklärung
-- `/agb` — AGB
-
-Replace placeholder company details in Impressum before production.
+See [LIVE.md](./LIVE.md) and [scripts/stripe-setup.md](./scripts/stripe-setup.md).
