@@ -1,4 +1,5 @@
 import { About } from "@/components/About";
+import { AppScreenshots } from "@/components/AppScreenshots";
 import { ConversionFlow } from "@/components/ConversionFlow";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
@@ -15,6 +16,7 @@ export default function HomePage() {
         <Hero />
         <About />
         <Product />
+        <AppScreenshots />
         <Pricing />
         <ConversionFlow />
         <Trust />

@@ -1,25 +1,31 @@
-# NEXORA live schalten
+# NEXORA Landing — Live
 
-## Option A — GitHub Pages (empfohlen, dauerhaft)
+## Live-URL (GitHub Pages)
 
-1. Öffne: https://github.com/CodeDevSys/booking-mvp/settings/pages
-2. **Build and deployment** → Source: **GitHub Actions**
-3. Workflow erneut starten: https://github.com/CodeDevSys/booking-mvp/actions/workflows/deploy-pages.yml  
-   → **Run workflow** → Branch `nexora-landing`
+**https://codedevsys.github.io/booking-mvp/**
 
-**Live-URL (nach Aktivierung):**  
-https://codedevsys.github.io/booking-mvp/
+(Branch `nexora-landing`, nach Aktivierung von GitHub Pages → Source: **GitHub Actions**)
 
-> Der Build ist bereits erfolgreich — nur Pages muss einmal aktiviert werden.
+### Einmalig aktivieren
 
-## Option B — Render (volles SaaS mit Stripe & Login)
+1. https://github.com/CodeDevSys/booking-mvp/settings/pages  
+2. **Build and deployment** → **GitHub Actions**  
+3. Workflow ausführen: [Deploy NEXORA to GitHub Pages](https://github.com/CodeDevSys/booking-mvp/actions/workflows/deploy-pages.yml) → **Run workflow**
 
-1. https://render.com → New **Web Service**
-2. Repo: `booking-mvp`, Branch: `nexora-landing`
-3. Env-Variablen aus `.env.example` (DATABASE_URL, NEXTAUTH_*, STRIPE_*)
-4. PostgreSQL-Datenbank verbinden (`render.yaml` vorhanden)
+## Vollständiges SaaS (Stripe, E-Mail, Dashboard)
 
-## Option C — Netlify
+Deploy Branch `nexora-landing` auf **Render** oder **Netlify** mit `@netlify/plugin-nextjs` — nicht nur statischer Export.
 
-1. Import `booking-mvp`, Branch `nexora-landing`
-2. Build: `npm run build`, Plugin `@netlify/plugin-nextjs`
+Env: siehe `.env.example`
+
+## Screenshots aktualisieren
+
+```bash
+# Booking MVP lokal starten
+cd ../booking-mvp && PORT=3099 npm start
+
+# Screenshots erzeugen
+cd nexora-landing
+BOOKING_URL=http://localhost:3099 npm run screenshots
+git add public/screenshots && git commit -m "chore: update booking screenshots"
+```
