@@ -35,6 +35,8 @@ export async function POST(request: Request) {
     let customerId: string | undefined;
     let customerEmail: string | undefined;
 
+    let tenantId: string | undefined;
+
     if (session?.user?.email) {
       customerEmail = session.user.email;
       const user = await prisma.user.findUnique({
@@ -42,11 +44,12 @@ export async function POST(request: Request) {
         include: { tenant: true },
       });
       customerId = user?.tenant?.stripeCustomerId ?? undefined;
+      tenantId = user?.tenantId ?? undefined;
 
       if (!customerId && user) {
         const customer = await getStripe().customers.create({
           email: user.email,
-          metadata: { userId: user.id, planId },
+          metadata: { userId: user.id, planId, tenantId: user.tenantId ?? "" },
         });
         customerId = customer.id;
 
@@ -68,11 +71,11 @@ export async function POST(request: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         trial_period_days: TRIAL_DAYS,
-        metadata: { planId },
+        metadata: { planId, tenantId: tenantId ?? "" },
       },
       success_url: `${baseUrl}/dashboard?checkout=success`,
       cancel_url: `${baseUrl}/register?plan=${planId}&canceled=1`,
-      metadata: { planId },
+      metadata: { planId, tenantId: tenantId ?? "" },
       allow_promotion_codes: false,
     });
 

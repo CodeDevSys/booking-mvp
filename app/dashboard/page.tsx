@@ -1,9 +1,11 @@
 import { authOptions } from "@/lib/auth";
-import { PLANS } from "@/lib/plans";
+import { PLANS, type PlanId } from "@/lib/plans";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BillingPortalButton } from "@/components/BillingPortalButton";
+import { BookingLinks } from "@/components/BookingLinks";
 
 export default async function DashboardPage({
   searchParams,
@@ -16,15 +18,20 @@ export default async function DashboardPage({
   }
 
   const subscription = session.user.subscription;
-  const planIdMap: Record<string, string> = {
+  const planIdMap: Record<string, PlanId> = {
     BASIC: "basic",
     PRO: "pro",
     BUSINESS: "business",
   };
+  const planId = planIdMap[subscription?.plan ?? ""] ?? "basic";
   const planName =
-    PLANS.find((p) => p.id === planIdMap[subscription?.plan ?? ""])?.name ??
-    subscription?.plan ??
-    "Trial";
+    PLANS.find((p) => p.id === planId)?.name ?? subscription?.plan ?? "Trial";
+
+  const tenant = session.user.tenantId
+    ? await prisma.tenant.findUnique({
+        where: { id: session.user.tenantId },
+      })
+    : null;
 
   return (
     <div className="min-h-screen bg-nexora-bg">
@@ -53,13 +60,14 @@ export default async function DashboardPage({
       <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         {searchParams.checkout === "success" && (
           <div className="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
-            Subscription activated. Welcome to NEXORA!
+            Abo aktiviert. Wir haben Ihnen eine E-Mail mit Ihrem Booking-MVP-Link
+            gesendet — prüfen Sie auch den Spam-Ordner.
           </div>
         )}
 
         <h1 className="text-2xl font-bold text-white">Business dashboard</h1>
         <p className="mt-2 text-nexora-muted">
-          Manage appointments, customers, and your subscription.
+          Verwalten Sie Abo, Buchungslinks und Termine.
         </p>
 
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -80,32 +88,25 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          <div className="glass rounded-2xl p-6">
-            <p className="text-sm text-nexora-muted">Today&apos;s appointments</p>
-            <p className="mt-1 text-3xl font-bold text-white">—</p>
-            <p className="mt-2 text-xs text-nexora-muted">
-              Connect your calendar to sync bookings
-            </p>
-          </div>
-
-          <div className="glass rounded-2xl p-6">
-            <p className="text-sm text-nexora-muted">Automation</p>
-            <p className="mt-1 text-3xl font-bold text-white">Active</p>
-            <p className="mt-2 text-xs text-nexora-muted">
-              Reminders & notifications enabled on Pro+
+          <div className="glass rounded-2xl p-6 sm:col-span-2">
+            <p className="text-sm text-nexora-muted">Booking MVP</p>
+            <p className="mt-1 text-sm text-slate-300">
+              Nach Checkout erhalten Sie per E-Mail den Link zu Ihrer
+              Terminbuchung (Tarif {planName}).
             </p>
           </div>
         </div>
 
+        {tenant?.slug && (
+          <BookingLinks tenantSlug={tenant.slug} planId={planId} />
+        )}
+
         <section className="mt-10 glass rounded-2xl p-6">
           <h2 className="text-lg font-semibold text-white">Appointment list</h2>
           <p className="mt-2 text-sm text-nexora-muted">
-            Your booking data will appear here once you configure services and
-            availability. This dashboard is linked to your subscription status.
+            Termine aus dem Booking MVP erscheinen hier, sobald die Integration
+            aktiv ist.
           </p>
-          <div className="mt-6 rounded-xl border border-dashed border-nexora-border/60 p-8 text-center text-sm text-nexora-muted">
-            No appointments yet — set up your booking page from settings.
-          </div>
         </section>
       </main>
     </div>

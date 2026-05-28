@@ -1,4 +1,6 @@
+import { sendBookingAccessEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import type { PlanId } from "@/lib/plans";
 import { getStripe } from "@/lib/stripe";
 import { PlanTier, SubscriptionStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
           session.subscription as string
         );
         await syncSubscription(subscription, session.customer as string);
+        await sendBookingLinkEmail(session);
         break;
       }
       case "customer.subscription.updated":
@@ -122,4 +125,51 @@ async function syncSubscription(
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
     },
   });
+}
+
+/** After checkout (trial or paid): email customer their Booking MVP links. */
+async function sendBookingLinkEmail(stripeSession: Stripe.Checkout.Session) {
+  const stripeCustomerId =
+    typeof stripeSession.customer === "string"
+      ? stripeSession.customer
+      : stripeSession.customer?.id;
+  if (!stripeCustomerId) return;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId },
+    include: {
+      subscription: true,
+      users: { where: { role: "OWNER" }, take: 1 },
+    },
+  });
+  if (!tenant || tenant.bookingWelcomeSentAt) return;
+
+  const email =
+    stripeSession.customer_details?.email ??
+    stripeSession.customer_email ??
+    tenant.users[0]?.email;
+  if (!email) {
+    console.warn("No email for booking welcome", tenant.id);
+    return;
+  }
+
+  const planId = (stripeSession.metadata?.planId ?? "basic") as PlanId;
+
+  try {
+    const sent = await sendBookingAccessEmail({
+      to: email,
+      businessName: tenant.name,
+      planId,
+      tenantSlug: tenant.slug,
+    });
+
+    if (sent) {
+      await prisma.tenant.update({
+        where: { id: tenant.id },
+        data: { bookingWelcomeSentAt: new Date() },
+      });
+    }
+  } catch (err) {
+    console.error("Failed to send booking access email:", err);
+  }
 }
