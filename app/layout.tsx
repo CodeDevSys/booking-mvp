@@ -15,8 +15,17 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.URL ??
+  "https://nexora.app";
+
 export const metadata: Metadata = {
-  title: "NEXORA | AI-Powered Scheduling & Automation",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "NEXORA | AI-Powered Scheduling & Automation",
+    template: "%s | NEXORA",
+  },
   description:
     "NEXORA helps businesses automate appointments and workflows using AI systems. Smart booking, dashboards, and Stripe-powered subscriptions.",
   keywords: [
@@ -25,12 +34,23 @@ export const metadata: Metadata = {
     "AI automation",
     "business booking",
     "NEXORA",
+    "Terminbuchung",
   ],
+  robots: { index: true, follow: true },
   openGraph: {
     title: "NEXORA | AI-Powered Scheduling",
     description: "Automate appointments and workflows for modern businesses.",
     type: "website",
+    locale: "de_DE",
+    siteName: "NEXORA",
+    url: siteUrl,
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "NEXORA | AI-Powered Scheduling",
+    description: "Automate appointments and workflows for modern businesses.",
+  },
+  alternates: { canonical: siteUrl },
 };
 
 export default function RootLayout({

@@ -1,3 +1,6 @@
+# NEXORA — Production Netlify configuration
+# Docs: https://docs.netlify.com/frameworks/next-js/overview/
+
 [build]
   command = "npm run build"
   publish = ".next"
@@ -7,3 +10,37 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  NPM_FLAGS = "--include=dev"
+  # Prisma generate at build; use real DATABASE_URL in Netlify UI for runtime
+  PRISMA_HIDE_UPDATE_MESSAGE = "true"
+
+# Production context (set secrets in Netlify UI — never commit values)
+[context.production.environment]
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "production"
+
+# Automatic HTTPS is enabled by Netlify (Let's Encrypt) once DNS points to the site.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/screenshots/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+# SPA fallbacks handled by Next.js plugin; legal pages are static routes
